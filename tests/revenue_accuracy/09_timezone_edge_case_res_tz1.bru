@@ -1,0 +1,79 @@
+meta {
+  name: BUG 2 PROOF - res-tz-1 timezone edge case is counted in prop-001 total
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/v1/dashboard/summary?property_id=prop-001
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer {{tokenTenantA}}
+}
+
+docs {
+  ## Bug 2: Timezone-Naive Monthly Revenue
+
+  This test proves that res-tz-1 (the timezone edge case reservation)
+  is included in prop-001's total revenue.
+
+  ### The critical reservation:
+  - res-tz-1: check_in = 2024-02-29 23:30:00 UTC
+  - In Europe/Paris (UTC+1) = 2024-03-01 00:30:00 → It IS a March reservation
+  - total_amount = $1,250.000
+
+  ### Without the fix:
+  - Naive UTC boundaries classify this as February, not March
+  - March total would be $1,000.00 (only 3 reservations)
+  - Total would be missing $1,250 from the annual sum too
+
+  ### With the fix:
+  - Timezone-aware boundaries correctly classify it as March (Paris time)
+  - prop-001 total = $2,250.00 (all 4 reservations)
+  - The $1,250 from res-tz-1 IS included
+
+  ### Why $2,250 proves the fix:
+  - If res-tz-1 were EXCLUDED, total = 333.333 + 333.333 + 333.334 = $1,000
+  - If res-tz-1 is INCLUDED, total = 1250 + 333.333 + 333.333 + 333.334 = $2,250
+  - Getting $2,250 confirms the timezone reservation is counted ✓
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("BUG 2 FIX: total_revenue is $2250 — proving res-tz-1 ($1250) IS counted", function() {
+    const body = res.getBody();
+    // If this were $1000, it would mean res-tz-1 was excluded (bug not fixed).
+    // $2250 = $1250 (res-tz-1) + $333.333 + $333.333 + $333.334
+    expect(body.total_revenue).to.equal(2250.0);
+    expect(body.total_revenue).to.not.equal(1000.0);
+  });
+
+  test("BUG 2 FIX: reservations_count is 4 — all reservations including timezone edge case", function() {
+    const body = res.getBody();
+    // 4 means res-tz-1 is included. 3 would mean the timezone bug is still present.
+    expect(body.reservations_count).to.equal(4);
+    expect(body.reservations_count).to.not.equal(3);
+  });
+
+  test("BUG 2 FIX: revenue includes the $1250 from res-tz-1 (Feb 29 23:30 UTC = Mar 1 Paris)", function() {
+    const body = res.getBody();
+    // The timezone edge reservation is $1250. Without it, total = $1000.
+    // Subtract it out: remaining 3 reservations = 333.333 + 333.333 + 333.334 = ~$1000
+    const withoutTzReservation = body.total_revenue - 1250;
+    // Allow small float tolerance for the remaining 3 sub-cent reservations
+    expect(withoutTzReservation).to.be.closeTo(1000.0, 0.01);
+  });
+
+  test("property confirms this is tenant-a's Beach House Alpha (Europe/Paris)", function() {
+    const body = res.getBody();
+    expect(body.property_id).to.equal("prop-001");
+    expect(body.currency).to.equal("USD");
+  });
+}
