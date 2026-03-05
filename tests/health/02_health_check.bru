@@ -1,0 +1,32 @@
+meta {
+  name: Root health check returns status and database info
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/health
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+tests {
+  test("status is exactly 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("body.status is one of 'healthy', 'degraded', 'unhealthy'", function() {
+    const body = res.getBody();
+    expect(body).to.have.property("status");
+    expect(["healthy", "degraded", "unhealthy"]).to.include(body.status);
+  });
+
+  test("body has 'database' key", function() {
+    const body = res.getBody();
+    expect(body).to.have.property("database");
+  });
+}

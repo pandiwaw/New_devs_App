@@ -1,0 +1,34 @@
+meta {
+  name: Root up check returns exactly {"status": "up"}
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/up
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+tests {
+  test("status is exactly 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("body.status is exactly 'up'", function() {
+    const body = res.getBody();
+    expect(body).to.have.property("status");
+    expect(body.status).to.equal("up");
+  });
+
+  test("response has no extra unexpected keys", function() {
+    const body = res.getBody();
+    const keys = Object.keys(body);
+    expect(keys).to.include("status");
+    expect(keys.length).to.equal(1);
+  });
+}

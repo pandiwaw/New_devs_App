@@ -1,0 +1,78 @@
+meta {
+  name: Login Tenant B (Ocean Rentals)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "email": "ocean@propertyflow.com",
+    "password": "client_b_2024"
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  if (res.getStatus() === 200 && body.access_token) {
+    bru.setVar("tokenTenantB", body.access_token);
+  }
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("access_token is a non-empty string", function() {
+    const body = res.getBody();
+    expect(body).to.have.property("access_token");
+    expect(body.access_token).to.be.a("string");
+    expect(body.access_token.length).to.be.above(0);
+  });
+
+  test("token_type is exactly 'bearer'", function() {
+    const body = res.getBody();
+    expect(body.token_type).to.equal("bearer");
+  });
+
+  test("user.id is 'user-ocean'", function() {
+    const body = res.getBody();
+    expect(body.user.id).to.equal("user-ocean");
+  });
+
+  test("user.email is 'ocean@propertyflow.com'", function() {
+    const body = res.getBody();
+    expect(body.user.email).to.equal("ocean@propertyflow.com");
+  });
+
+  test("user.name is 'Ocean Rentals Manager'", function() {
+    const body = res.getBody();
+    expect(body.user.name).to.equal("Ocean Rentals Manager");
+  });
+
+  test("user.tenant_id is 'tenant-b'", function() {
+    const body = res.getBody();
+    expect(body.user.tenant_id).to.equal("tenant-b");
+  });
+
+  test("user.is_admin is false", function() {
+    const body = res.getBody();
+    expect(body.user.is_admin).to.equal(false);
+  });
+
+  test("error is null", function() {
+    const body = res.getBody();
+    expect(body.error).to.be.null;
+  });
+}

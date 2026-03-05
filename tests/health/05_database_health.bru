@@ -1,0 +1,31 @@
+meta {
+  name: Database health returns status field
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/database-health
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+tests {
+  test("status is exactly 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("body has 'status' key", function() {
+    const body = res.getBody();
+    expect(body).to.have.property("status");
+  });
+
+  test("body.status is one of 'healthy', 'unhealthy', 'error'", function() {
+    const body = res.getBody();
+    expect(["healthy", "unhealthy", "error"]).to.include(body.status);
+  });
+}

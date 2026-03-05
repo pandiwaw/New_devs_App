@@ -1,0 +1,42 @@
+meta {
+  name: Nonexistent property returns exactly zero revenue
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/v1/dashboard/summary?property_id=prop-999
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer {{tokenTenantA}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("property_id is 'prop-999'", function() {
+    const body = res.getBody();
+    expect(body.property_id).to.equal("prop-999");
+  });
+
+  test("total_revenue is exactly 0", function() {
+    const body = res.getBody();
+    expect(body.total_revenue).to.equal(0);
+  });
+
+  test("reservations_count is exactly 0", function() {
+    const body = res.getBody();
+    expect(body.reservations_count).to.equal(0);
+  });
+
+  test("currency is 'USD'", function() {
+    const body = res.getBody();
+    expect(body.currency).to.equal("USD");
+  });
+}

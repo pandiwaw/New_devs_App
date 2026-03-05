@@ -1,0 +1,46 @@
+meta {
+  name: Login with nonexistent email is rejected
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "email": "nobody@propertyflow.com",
+    "password": "doesnt_matter"
+  }
+}
+
+tests {
+  test("status is not 200", function() {
+    expect(res.getStatus()).to.not.equal(200);
+  });
+
+  test("status is 401 or 500", function() {
+    const status = res.getStatus();
+    expect([401, 500]).to.include(status);
+  });
+
+  test("no access_token in response", function() {
+    const body = res.getBody();
+    const hasToken = body && body.access_token && body.access_token.length > 0;
+    expect(hasToken).to.not.be.true;
+  });
+
+  test("response has detail explaining failure", function() {
+    const body = res.getBody();
+    expect(body).to.have.property("detail");
+    expect(body.detail).to.be.a("string");
+  });
+}

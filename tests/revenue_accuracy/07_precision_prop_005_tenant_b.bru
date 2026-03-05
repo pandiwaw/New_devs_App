@@ -1,0 +1,48 @@
+meta {
+  name: prop-005 revenue is exactly $3256.00 (Tenant B)
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/v1/dashboard/summary?property_id=prop-005
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer {{tokenTenantB}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("property_id is 'prop-005'", function() {
+    const body = res.getBody();
+    expect(body.property_id).to.equal("prop-005");
+  });
+
+  test("total_revenue is exactly 3256.0 (seed: 920.00 + 1080.40 + 1255.60)", function() {
+    const body = res.getBody();
+    expect(body.total_revenue).to.equal(3256.0);
+  });
+
+  test("reservations_count is exactly 3", function() {
+    const body = res.getBody();
+    expect(body.reservations_count).to.equal(3);
+  });
+
+  test("BUG FIX VERIFIED: no float precision drift", function() {
+    const body = res.getBody();
+    const rounded = Math.round(body.total_revenue * 100) / 100;
+    expect(body.total_revenue).to.equal(rounded);
+  });
+
+  test("currency is 'USD'", function() {
+    const body = res.getBody();
+    expect(body.currency).to.equal("USD");
+  });
+}

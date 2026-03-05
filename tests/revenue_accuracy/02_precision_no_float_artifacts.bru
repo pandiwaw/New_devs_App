@@ -1,0 +1,55 @@
+meta {
+  name: prop-001 revenue is exactly $2250.00 with no float artifacts
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/dashboard/summary?property_id=prop-001
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer {{tokenTenantA}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("property_id is 'prop-001'", function() {
+    const body = res.getBody();
+    expect(body.property_id).to.equal("prop-001");
+  });
+
+  test("total_revenue is exactly 2250.0 (seed: 1250.000 + 333.333 + 333.333 + 333.334)", function() {
+    const body = res.getBody();
+    expect(body.total_revenue).to.equal(2250.0);
+  });
+
+  test("reservations_count is exactly 4", function() {
+    const body = res.getBody();
+    expect(body.reservations_count).to.equal(4);
+  });
+
+  test("BUG FIX VERIFIED: no float precision drift (value === Math.round * 100 / 100)", function() {
+    const body = res.getBody();
+    const rounded = Math.round(body.total_revenue * 100) / 100;
+    expect(body.total_revenue).to.equal(rounded);
+  });
+
+  test("BUG FIX VERIFIED: at most 2 decimal places in string representation", function() {
+    const body = res.getBody();
+    const revenueStr = body.total_revenue.toString();
+    const decimalPart = revenueStr.split(".")[1] || "";
+    expect(decimalPart.length).to.be.at.most(2);
+  });
+
+  test("currency is 'USD'", function() {
+    const body = res.getBody();
+    expect(body.currency).to.equal("USD");
+  });
+}

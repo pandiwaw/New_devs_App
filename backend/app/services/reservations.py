@@ -1,19 +1,27 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Dict, Any, List
+import pytz
 
-async def calculate_monthly_revenue(property_id: str, month: int, year: int, db_session=None) -> Decimal:
+async def calculate_monthly_revenue(property_id: str, month: int, year: int, timezone: str = 'UTC', db_session=None) -> Decimal:
     """
-    Calculates revenue for a specific month.
+    Calculates revenue for a specific month, using the property's local timezone
+    to determine month boundaries.
     """
 
-    start_date = datetime(year, month, 1)
+    # Use the property's timezone to determine the correct month boundaries
+    tz = pytz.timezone(timezone)
+    start_date = tz.localize(datetime(year, month, 1))
     if month < 12:
-        end_date = datetime(year, month + 1, 1)
+        end_date = tz.localize(datetime(year, month + 1, 1))
     else:
-        end_date = datetime(year + 1, 1, 1)
-        
-    print(f"DEBUG: Querying revenue for {property_id} from {start_date} to {end_date}")
+        end_date = tz.localize(datetime(year + 1, 1, 1))
+
+    # Convert to UTC for database comparison
+    start_date_utc = start_date.astimezone(pytz.utc)
+    end_date_utc = end_date.astimezone(pytz.utc)
+
+    print(f"DEBUG: Querying revenue for {property_id} from {start_date_utc} to {end_date_utc} (property tz: {timezone})")
 
     # SQL Simulation (This would be executed against the actual DB)
     query = """
@@ -24,11 +32,11 @@ async def calculate_monthly_revenue(property_id: str, month: int, year: int, db_
         AND check_in_date >= $3
         AND check_in_date < $4
     """
-    
+
     # In production this query executes against a database session.
-    # result = await db.fetch_val(query, property_id, tenant_id, start_date, end_date)
+    # result = await db.fetch_val(query, property_id, tenant_id, start_date_utc, end_date_utc)
     # return result or Decimal('0')
-    
+
     return Decimal('0') # Placeholder for now until DB connection is finalized
 
 async def calculate_total_revenue(property_id: str, tenant_id: str) -> Dict[str, Any]:
@@ -88,17 +96,21 @@ async def calculate_total_revenue(property_id: str, tenant_id: str) -> Dict[str,
     except Exception as e:
         print(f"Database error for {property_id} (tenant: {tenant_id}): {e}")
         
-        # Create property-specific mock data for testing when DB is unavailable
-        # This ensures each property shows different figures
+        # Fallback mock data keyed by (property_id, tenant_id) to preserve
+        # tenant isolation even when the database is unavailable.
+        # Values mirror seed.sql exactly.
         mock_data = {
-            'prop-001': {'total': '1000.00', 'count': 3},
-            'prop-002': {'total': '4975.50', 'count': 4}, 
-            'prop-003': {'total': '6100.50', 'count': 2},
-            'prop-004': {'total': '1776.50', 'count': 4},
-            'prop-005': {'total': '3256.00', 'count': 3}
+            ('prop-001', 'tenant-a'): {'total': '2250.000', 'count': 4},
+            ('prop-001', 'tenant-b'): {'total': '0.00', 'count': 0},
+            ('prop-002', 'tenant-a'): {'total': '4975.500', 'count': 4},
+            ('prop-003', 'tenant-a'): {'total': '6100.500', 'count': 2},
+            ('prop-004', 'tenant-b'): {'total': '1776.500', 'count': 4},
+            ('prop-005', 'tenant-b'): {'total': '3256.000', 'count': 3},
         }
-        
-        mock_property_data = mock_data.get(property_id, {'total': '0.00', 'count': 0})
+
+        mock_property_data = mock_data.get(
+            (property_id, tenant_id), {'total': '0.00', 'count': 0}
+        )
         
         return {
             "property_id": property_id,

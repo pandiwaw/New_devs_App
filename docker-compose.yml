@@ -48,5 +48,36 @@ services:
     ports:
       - "6380:6379" # Maps internal 6379 to host 6380 to avoid local conflicts
 
+  # ── Test runners (only start with --profile test) ───────────────────────
+  unit-tests:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    entrypoint: ["sh", "-c", "pip install pytest pytz && pytest /tests/unit -v --tb=short"]
+    volumes:
+      - ./tests/unit:/tests/unit
+    profiles: ["test"]
+
+  bruno-tests:
+    image: node:20-alpine
+    working_dir: /tests
+    entrypoint: >
+      sh -c "
+        npm install -g @usebruno/cli &&
+        echo 'Waiting for backend...' &&
+        for i in $$(seq 1 30); do
+          wget -q --spider http://backend:8000/up && break
+          echo \"  attempt $$i/30...\"
+          sleep 2
+        done &&
+        echo '✓ Backend is up — running Bruno tests...' &&
+        bru run /tests -r --env docker
+      "
+    volumes:
+      - ./tests:/tests
+    depends_on:
+      - backend
+    profiles: ["test"]
+
 volumes:
   pgdata:

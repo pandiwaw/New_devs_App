@@ -1,0 +1,42 @@
+meta {
+  name: Tenant A gets zero for tenant B exclusive property (prop-004 = Lakeside Cottage)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/dashboard/summary?property_id=prop-004
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer {{tokenTenantA}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("property_id is 'prop-004'", function() {
+    const body = res.getBody();
+    expect(body.property_id).to.equal("prop-004");
+  });
+
+  test("total_revenue is exactly 0 (prop-004 belongs to tenant-b, not tenant-a)", function() {
+    const body = res.getBody();
+    expect(body.total_revenue).to.equal(0);
+  });
+
+  test("reservations_count is exactly 0", function() {
+    const body = res.getBody();
+    expect(body.reservations_count).to.equal(0);
+  });
+
+  test("tenant A does NOT see tenant B's $1776.50 revenue for prop-004", function() {
+    const body = res.getBody();
+    expect(body.total_revenue).to.not.equal(1776.5);
+  });
+}

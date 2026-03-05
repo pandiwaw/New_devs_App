@@ -1,0 +1,31 @@
+meta {
+  name: Dashboard rejects unauthenticated request
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/dashboard/summary?property_id=prop-001
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+tests {
+  test("status is exactly 401", function() {
+    expect(res.getStatus()).to.equal(401);
+  });
+
+  test("response has detail field", function() {
+    const body = res.getBody();
+    expect(body).to.have.property("detail");
+  });
+
+  test("detail says 'Not authenticated'", function() {
+    const body = res.getBody();
+    expect(body.detail).to.equal("Not authenticated");
+  });
+}

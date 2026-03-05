@@ -1,0 +1,32 @@
+meta {
+  name: Tenant A prop-001 cached at $2250 — prime the cache
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/dashboard/summary?property_id=prop-001
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer {{tokenTenantA}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("tenant A prop-001 total_revenue is exactly 2250.0", function() {
+    const body = res.getBody();
+    expect(body.total_revenue).to.equal(2250.0);
+  });
+
+  test("tenant A prop-001 reservations_count is exactly 4", function() {
+    const body = res.getBody();
+    expect(body.reservations_count).to.equal(4);
+  });
+}

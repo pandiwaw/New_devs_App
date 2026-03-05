@@ -1,0 +1,42 @@
+meta {
+  name: BUG FIX — Tenant B prop-001 returns $0 (not Tenant A's cached $2250)
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/v1/dashboard/summary?property_id=prop-001
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer {{tokenTenantB}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("BUG FIX VERIFIED: tenant B prop-001 total_revenue is exactly 0 (no reservations)", function() {
+    const body = res.getBody();
+    expect(body.total_revenue).to.equal(0);
+  });
+
+  test("BUG FIX VERIFIED: tenant B prop-001 reservations_count is exactly 0", function() {
+    const body = res.getBody();
+    expect(body.reservations_count).to.equal(0);
+  });
+
+  test("BUG FIX VERIFIED: tenant B does NOT see tenant A's cached $2250", function() {
+    const body = res.getBody();
+    expect(body.total_revenue).to.not.equal(2250.0);
+  });
+
+  test("BUG FIX VERIFIED: tenant B does NOT see tenant A's 4 reservations", function() {
+    const body = res.getBody();
+    expect(body.reservations_count).to.not.equal(4);
+  });
+}

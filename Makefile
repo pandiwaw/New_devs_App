@@ -10,3 +10,15 @@ pre-commit:
 
 uv-install:
 	cd backend && uv sync
+
+# ── Tests ────────────────────────────────────────────────────────────────
+# Tests live under docker compose --profile test. They never start with
+# a normal `docker compose up`.
+
+test-unit:                          ## Run pytest unit tests (no running app needed)
+	docker compose --profile test run --rm unit-tests
+
+test-integration:                   ## Run Bruno API tests (app must be running)
+	docker compose --profile test run --rm bruno-tests
+
+test: test-unit test-integration    ## Run all tests

@@ -1,0 +1,47 @@
+meta {
+  name: Tenant B revenue for shared prop-001 (Mountain Lodge Beta) — must differ from Tenant A
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/dashboard/summary?property_id=prop-001
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer {{tokenTenantB}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("property_id is exactly 'prop-001'", function() {
+    const body = res.getBody();
+    expect(body.property_id).to.equal("prop-001");
+  });
+
+  test("BUG FIX VERIFIED: total_revenue is exactly 0 (tenant-b has zero reservations for prop-001)", function() {
+    const body = res.getBody();
+    expect(body.total_revenue).to.equal(0);
+  });
+
+  test("BUG FIX VERIFIED: reservations_count is exactly 0 (tenant-b has no bookings for prop-001)", function() {
+    const body = res.getBody();
+    expect(body.reservations_count).to.equal(0);
+  });
+
+  test("BUG FIX VERIFIED: tenant B does NOT see tenant A's $2250 revenue (cache leak prevented)", function() {
+    const body = res.getBody();
+    expect(body.total_revenue).to.not.equal(2250.0);
+  });
+
+  test("currency is 'USD'", function() {
+    const body = res.getBody();
+    expect(body.currency).to.equal("USD");
+  });
+}

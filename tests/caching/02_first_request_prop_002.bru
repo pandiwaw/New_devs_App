@@ -1,0 +1,42 @@
+meta {
+  name: First request prop-002 (cache miss) — expect exact $4975.50
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/dashboard/summary?property_id=prop-002
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer {{tokenTenantA}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("property_id is 'prop-002'", function() {
+    const body = res.getBody();
+    expect(body.property_id).to.equal("prop-002");
+  });
+
+  test("total_revenue is exactly 4975.5", function() {
+    const body = res.getBody();
+    expect(body.total_revenue).to.equal(4975.5);
+  });
+
+  test("reservations_count is exactly 4", function() {
+    const body = res.getBody();
+    expect(body.reservations_count).to.equal(4);
+  });
+
+  test("currency is 'USD'", function() {
+    const body = res.getBody();
+    expect(body.currency).to.equal("USD");
+  });
+}

@@ -1,0 +1,27 @@
+meta {
+  name: Logout returns success message
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/logout
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+tests {
+  test("status is exactly 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("message is exactly 'Logged out successfully'", function() {
+    const body = res.getBody();
+    expect(body).to.have.property("message");
+    expect(body.message).to.equal("Logged out successfully");
+  });
+}

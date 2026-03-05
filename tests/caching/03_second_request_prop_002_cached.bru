@@ -1,0 +1,42 @@
+meta {
+  name: Second request prop-002 (cache hit) — same exact values
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/dashboard/summary?property_id=prop-002
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer {{tokenTenantA}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("cached result: total_revenue is still exactly 4975.5", function() {
+    const body = res.getBody();
+    expect(body.total_revenue).to.equal(4975.5);
+  });
+
+  test("cached result: reservations_count is still exactly 4", function() {
+    const body = res.getBody();
+    expect(body.reservations_count).to.equal(4);
+  });
+
+  test("cached result: property_id unchanged", function() {
+    const body = res.getBody();
+    expect(body.property_id).to.equal("prop-002");
+  });
+
+  test("cached result: currency unchanged", function() {
+    const body = res.getBody();
+    expect(body.currency).to.equal("USD");
+  });
+}
